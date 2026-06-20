@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "AltarAC-mc12111",
+  "version": "${version}",
+  "name": "AltarAC for 1.21.2+ built against 1.21.11",
+  "description": "Libre simulation anticheat designed for 1.21 with 1.8-1.21 support, powered by PacketEvents 2.0.",
+  "authors": [
+    "AltarAC"
+  ],
+  "license": "GPLv3",
+  "environment": "server",
+  "entrypoints": {
+    "AltarACMainLoad": [
+      "ac.altarac.platform.fabric.mc12111.AltarACFabric1212LoaderPlugin"
+    ]
+  },
+  "accessWidener": "AltarAC.accesswidener",
+  "depends": {
+    "minecraft": ">=1.21.2 \u003c26",
+    "fabric-lifecycle-events-v1": "*"
+  }
+}

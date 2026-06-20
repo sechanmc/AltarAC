@@ -1,0 +1,40 @@
+package ac.altarac.checks.impl.multiactions;
+
+import ac.altarac.api.storage.verbose.Verbose;
+import ac.altarac.checks.Check;
+import ac.altarac.checks.CheckData;
+import ac.altarac.checks.type.PacketCheck;
+import ac.altarac.player.AltarACPlayer;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.protocol.player.ClientVersion;
+
+@CheckData(name = "MultiActionsD", stableKey = "AltarAC.multiactions.inventory_close_while_moving", description = "Closed inventory while moving")
+public class MultiActionsD extends Check implements PacketCheck {
+    private static final Verbose V =
+            Verbose.of("sprinting={bool}, sneaking={bool}, input={bool}");
+
+    public MultiActionsD(AltarACPlayer player) {
+        super(player);
+    }
+
+    @Override
+    public void onPacketReceive(PacketReceiveEvent event) {
+        if (event.getPacketType() != PacketType.Play.Client.CLOSE_WINDOW) return;
+        if (player.serverOpenedInventoryThisTick) return;
+
+        boolean sprinting = MultiActionsC.isVerboseSprinting(player);
+        boolean sneaking = MultiActionsC.isVerboseSneaking(player);
+        boolean input = MultiActionsC.isVerboseInput(player);
+        if (!sprinting && !sneaking && !input) return;
+
+        // The client force-closes the inventory while inside a nether portal, sending this close
+        // window packet even while moving. This only happens on 1.12.2 and newer clients.
+        if (player.getClientVersion().isNewerThanOrEquals(ClientVersion.V_1_12_2) && player.isInNetherPortal) return;
+
+        // Don't cancel this packet, because it won't do anything except for making chests
+        // look like they are still open (desynced),
+        // and it can cause incompatibility issues with plugins
+        flag(V.write(verbose()).bool(sprinting).bool(sneaking).bool(input));
+    }
+}

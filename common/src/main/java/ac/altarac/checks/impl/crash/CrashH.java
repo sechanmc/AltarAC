@@ -1,0 +1,46 @@
+package ac.altarac.checks.impl.crash;
+
+import ac.altarac.api.storage.verbose.Verbose;
+import ac.altarac.checks.Check;
+import ac.altarac.checks.CheckData;
+import ac.altarac.checks.type.PacketCheck;
+import ac.altarac.player.AltarACPlayer;
+import com.github.retrooper.packetevents.event.PacketReceiveEvent;
+import com.github.retrooper.packetevents.protocol.packettype.PacketType;
+import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientTabComplete;
+
+@CheckData(name = "CrashH", stableKey = "AltarAC.crash.invalid_tab_complete", description = "Sent a tab complete request with invalid or excessive length")
+public class CrashH extends Check implements PacketCheck {
+    private static final Verbose V = Verbose.of("[(length)|(invalid)] length={sint}");
+
+    public CrashH(AltarACPlayer player) {
+        super(player);
+    }
+
+    @Override
+    public void onPacketReceive(PacketReceiveEvent event) {
+        if (event.getPacketType() == PacketType.Play.Client.TAB_COMPLETE) {
+            WrapperPlayClientTabComplete wrapper = new WrapperPlayClientTabComplete(event);
+            String text = wrapper.getText();
+            final int length = text.length();
+            // general length limit
+            if (length > (!player.canUseGameMasterBlocks() ? 256 : 32500)) {
+                if (shouldModifyPackets()) {
+                    event.setCancelled(true);
+                    player.onPacketCancel();
+                }
+                flag(V.write(verbose()).bool(true).sint(length));
+                return;
+            }
+            // paper's patch
+            final int index;
+            if (length > 64 && ((index = text.indexOf(' ')) == -1 || index >= 64)) {
+                if (shouldModifyPackets()) {
+                    event.setCancelled(true);
+                    player.onPacketCancel();
+                }
+                flag(V.write(verbose()).bool(false).sint(length));
+            }
+        }
+    }
+}
